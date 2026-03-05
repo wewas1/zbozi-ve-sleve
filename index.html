@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zboží ve slevě</title>
+<meta name="description" content="Porovnání slev a cen v jihlavských supermarketech">
+<meta name="theme-color" content="#f0c040">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Slevy">
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #272727;
+    --accent: #f0c040;
+    --green: #4caf7d;
+    --red: #e05a5a;
+    --text: #f0ede8;
+    --muted: #777;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    grid-column: 1 / -1;
+    padding: 1.2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    flex-shrink: 0;
+  }
+  header h1 span { color: var(--accent); }
+
+  .stores-bar { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  .store-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 0.26rem 0.8rem;
+    font-size: 0.73rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .store-chip.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 66px);
+    position: sticky;
+    top: 0;
+  }
+
+  .section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.67rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  .add-row { display: flex; gap: 0.5rem; }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.87rem;
+    padding: 0.58rem 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 0;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+
+  .btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 7px;
+    padding: 0.58rem 1rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.83rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn:hover { background: #f5d060; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn.ghost {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn.ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+  .btn.full { width: 100%; justify-content: center; padding: 0.7rem; }
+
+  /* WATCHLIST */
+  .watchlist { display: flex; flex-direction: column; gap: 0.35rem; }
+
+  .watch-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .watch-item:hover { border-color: #444; }
+  .watch-item.has-sale { border-color: var(--green); background: #0e1a12; }
+
+  .watch-item .item-name {
+    flex: 1;
+    font-size: 0.84rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sale-badge {
+    background: var(--green);
+    color: #000;
+    font-size: 0.58rem;
+    font-weight: 700;
+    padding: 0.13rem 0.4rem;
+    border-radius: 100px;
+    flex-shrink: 0;
+    font-family: 'Syne', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0.1rem 0.25rem;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .del-btn:hover { color: var(--red); }
+
+  .empty-watchlist {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 1.25rem 0.5rem;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    line-height: 1.6;
+  }
+
+  .last-check { font-size: 0.7rem; color: var(--muted); line-height: 1.5; }
+
+  hr { border: none; border-top: 1px solid var(--border); }
+
+  /* MAIN */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: calc(100vh - 66px);
+  }
+
+  .search-area {
+    padding: 1.25rem 1.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-row { display: flex; gap: 0.65rem; max-width: 620px; }
+  .search-row input { font-size: 0.93rem; }
+
+  .quick-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.65rem; }
+
+  .quick-tag {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.26rem 0.6rem;
+    font-size: 0.73rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .quick-tag:hover { border-color: var(--accent); color: var(--accent); }
+
+  .results-area { padding: 1.5rem 1.75rem; flex: 1; }
+
+  /* RESULT CARDS */
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.1rem;
+    flex-wrap: wrap;
+  }
+  .result-header h2 { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 1.25rem 1.4rem;
+    margin-bottom: 0.9rem;
+    max-width: 660px;
+    animation: fadeIn 0.22s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+  .result-card.highlight { border-color: var(--accent); background: linear-gradient(135deg, #1e1a0e, var(--surface)); }
+
+  .card-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 0.55rem;
+  }
+
+  .card-content { font-size: 0.89rem; line-height: 1.75; color: #ccc; }
+  .card-content strong { color: var(--text); }
+
+  /* BATCH GRID */
+  .batch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.85rem;
+    max-width: 920px;
+  }
+
+  .batch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    animation: fadeIn 0.22s ease;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .batch-card:hover { border-color: #444; }
+  .batch-card.sale { border-color: var(--green); background: #0e1a12; }
+  .batch-card.checking { opacity: 0.6; }
+
+  .bc-name {
+    font-size: 0.84rem;
+    font-weight: 500;
+    margin-bottom: 0.45rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .bc-status { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+  .bc-status.sale-found { color: var(--green); }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 3rem; color: var(--muted); }
+  .spinner {
+    display: inline-block;
+    width: 22px; height: 22px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-bottom: 0.65rem;
+  }
+  .mini-spinner {
+    display: inline-block;
+    width: 11px; height: 11px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error { background: #1a0f0f; border: 1px solid #5a2020; border-radius: 10px; padding: 1.1rem 1.4rem; color: #e08080; font-size: 0.87rem; }
+
+  .placeholder { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .placeholder .icon { font-size: 2.5rem; margin-bottom: 0.9rem; opacity: 0.35; }
+  .placeholder p { font-size: 0.88rem; line-height: 1.7; }
+
+  @media (max-width: 680px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { max-height: none; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+    .main { max-height: none; }
+    header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <h1>Slevy<span>.</span>Jihlava</h1>
+  <div class="stores-bar" id="storeBar"></div>
+</header>
+
+<aside class="sidebar">
+  <div class="section-label">📋 Sledovaný seznam</div>
+
+  <div class="add-row">
+    <input type="text" id="watchInput" placeholder="Přidat produkt…" />
+    <button class="btn" onclick="addToWatchlist()">+</button>
+  </div>
+
+  <div class="watchlist" id="watchlist">
+    <div class="empty-watchlist">Zatím žádné produkty.<br>Přidejte co chcete sledovat.</div>
+  </div>
+
+  <div id="checkAllWrap" style="display:none; display:flex; flex-direction:column; gap:0.5rem;">
+    <hr>
+    <button class="btn full" id="checkAllBtn" onclick="checkAllSales()">🔍 Zkontrolovat všechny slevy</button>
+    <div class="last-check" id="lastCheckTime"></div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="search-area">
+    <div class="search-row">
+      <input type="text" id="query" placeholder="Hledat konkrétní produkt…" />
+      <button class="btn" id="searchBtn" onclick="doSearch()">Hledat</button>
+    </div>
+    <div class="quick-tags">
+      <span style="font-size:0.7rem;color:var(--muted);align-self:center;">Rychlé:</span>
+      <button class="quick-tag" onclick="setAndSearch('toaletní papír Zewa 3vrstvý')">🧻 Zewa TP</button>
+      <button class="quick-tag" onclick="setAndSearch('máslo Olma 250g')">🧈 Máslo Olma</button>
+      <button class="quick-tag" onclick="setAndSearch('Coca-Cola 1.5l')">🥤 Coca-Cola</button>
+      <button class="quick-tag" onclick="setAndSearch('šampon Pantene')">🧴 Pantene</button>
+      <button class="quick-tag" onclick="setAndSearch('káva Jacobs 200g')">☕ Jacobs</button>
+      <button class="quick-tag" onclick="setAndSearch('Nutella 400g')">🍫 Nutella</button>
+    </div>
+  </div>
+  <div class="results-area" id="resultsArea">
+    <div class="placeholder">
+      <div class="icon">🛒</div>
+      <p>Přidejte produkty do sledovaného seznamu vlevo<br>a zkontrolujte všechny slevy najednou.<br><br>Nebo vyhledejte konkrétní produkt.</p>
+    </div>
+  </div>
+</main>
+
+</div>
+
+<script>
+// ── STORES ──
+const STORES = [
+  { name: 'Albert', active: true },
+  { name: 'Kaufland', active: true },
+  { name: 'Lidl', active: true },
+  { name: 'Penny', active: true },
+  { name: 'Tesco', active: true },
+  { name: 'Billa', active: true },
+  { name: 'Globus', active: true },
+  { name: 'Norma', active: true },
+];
+
+const bar = document.getElementById('storeBar');
+STORES.forEach(s => {
+  const chip = document.createElement('div');
+  chip.className = 'store-chip' + (s.active ? ' active' : '');
+  chip.textContent = s.name;
+  chip.onclick = () => { s.active = !s.active; chip.classList.toggle('active'); };
+  bar.appendChild(chip);
+});
+
+function getActiveStores() { return STORES.filter(s => s.active).map(s => s.name); }
+
+// ── WATCHLIST STATE ──
+let watchlist = [];
+try { watchlist = JSON.parse(localStorage.getItem('wl_jihlava') || '[]'); } catch(e) {}
+
+function saveWatchlist() {
+  try { localStorage.setItem('wl_jihlava', JSON.stringify(watchlist)); } catch(e) {}
+}
+
+// ── RENDER WATCHLIST ──
+function renderWatchlist() {
+  const el = document.getElementById('watchlist');
+  const wrap = document.getElementById('checkAllWrap');
+
+  if (watchlist.length === 0) {
+    el.innerHTML = '<div class="empty-watchlist">Zatím žádné produkty.<br>Přidejte co chcete sledovat.</div>';
+    wrap.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'flex';
+  el.innerHTML = '';
+
+  watchlist.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'watch-item' + (item.hasSale ? ' has-sale' : '');
+    div.innerHTML = `
+      <span class="item-name">${esc(item.name)}</span>
+      ${item.checking ? '<span class="mini-spinner"></span>' : ''}
+      ${item.hasSale && !item.checking ? '<span class="sale-badge">SLEVA</span>' : ''}
+      <button class="del-btn" title="Odebrat">×</button>
+    `;
+    div.querySelector('.del-btn').onclick = (e) => { e.stopPropagation(); removeItem(item.id); };
+    div.onclick = (e) => { if (e.target.classList.contains('del-btn')) return; setAndSearch(item.name); };
+    el.appendChild(div);
+  });
+}
+
+function addToWatchlist() {
+  const input = document.getElementById('watchInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (watchlist.find(i => i.name.toLowerCase() === name.toLowerCase())) {
+    input.style.borderColor = 'var(--red)';
+    setTimeout(() => input.style.borderColor = '', 800);
+    return;
+  }
+  watchlist.push({ id: Date.now().toString(), name, hasSale: false, saleNote: '', lastCheck: null, checking: false });
+  saveWatchlist();
+  input.value = '';
+  renderWatchlist();
+}
+
+function removeItem(id) {
+  watchlist = watchlist.filter(i => i.id !== id);
+  saveWatchlist();
+  renderWatchlist();
+}
+
+document.getElementById('watchInput').addEventListener('keydown', e => { if (e.key === 'Enter') addToWatchlist(); });
+
+// ── CHECK ALL ──
+async function checkAllSales() {
+  if (!watchlist.length) return;
+  const stores = getActiveStores();
+  if (!stores.length) { alert('Vyberte alespoň jeden obchod.'); return; }
+
+  const btn = document.getElementById('checkAllBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Kontroluji…';
+
+  const area = document.getElementById('resultsArea');
+  area.innerHTML = `
+    <div class="result-header"><h2>🔍 Kontrola slev – celý seznam</h2></div>
+    <div class="batch-grid" id="batchGrid"></div>
+  `;
+
+  const grid = document.getElementById('batchGrid');
+
+  // Placeholder cards
+  watchlist.forEach(item => {
+    item.checking = true;
+    const card = document.createElement('div');
+    card.className = 'batch-card checking';
+    card.id = `bc-${item.id}`;
+    card.innerHTML = `<div class="bc-name"><span class="mini-spinner"></span> ${esc(item.name)}</div><div class="bc-status">Hledám…</div>`;
+    grid.appendChild(card);
+  });
+  renderWatchlist();
+
+  const storeList = stores.join(', ');
+  const chunks = chunkArray([...watchlist], 3);
+  for (const chunk of chunks) {
+    await Promise.all(chunk.map(item => checkOneSale(item, storeList)));
+  }
+
+  document.getElementById('lastCheckTime').textContent =
+    `Poslední kontrola: ${new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}`;
+
+  saveWatchlist();
+  renderWatchlist();
+  btn.disabled = false;
+  btn.textContent = '🔍 Zkontrolovat všechny slevy';
+}
+
+async function checkOneSale(item, storeList) {
+  const prompt = `Jsi asistent na sledování slev v českých supermarketech.
+
+Produkt: "${item.name}"
+Obchody v Jihlavě: ${storeList}
+
+Zjisti, zda je tento produkt AKTUÁLNĚ v akci nebo slevě (pod obvyklou cenou) v některém z obchodů.
+- Pokud ANO: uveď stručně kde, za kolik a kolik se ušetří. Max 2 věty.
+- Pokud NE: napiš pouze "Žádná aktuální akce nenalezena."
+Odpověz česky.`;
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 250,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const text = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('').trim();
+    const noSaleKeywords = ['žádná', 'nenalezena', 'nenašel', 'nepodařilo', 'nejsou'];
+    const hasSale = text.length > 5 && !noSaleKeywords.some(k => text.toLowerCase().includes(k));
+    item.hasSale = hasSale;
+    item.saleNote = text || 'Bez výsledku.';
+  } catch(e) {
+    item.hasSale = false;
+    item.saleNote = 'Chyba při kontrole.';
+  }
+
+  item.checking = false;
+  item.lastCheck = new Date().toISOString();
+  updateBatchCard(item);
+}
+
+function updateBatchCard(item) {
+  const card = document.getElementById(`bc-${item.id}`);
+  if (!card) return;
+  card.className = 'batch-card' + (item.hasSale ? ' sale' : '');
+  card.innerHTML = `
+    <div class="bc-name">${item.hasSale ? '🟢' : '⚪'} ${esc(item.name)} ${item.hasSale ? '<span class="sale-badge">SLEVA</span>' : ''}</div>
+    <div class="bc-status ${item.hasSale ? 'sale-found' : ''}">${esc(item.saleNote)}</div>
+  `;
+  card.onclick = () => setAndSearch(item.name);
+}
+
+// ── SINGLE SEARCH ──
+function setQuery(q) { document.getElementById('query').value = q; }
+
+function setAndSearch(q) { setQuery(q); doSearch(); }
+
+document.getElementById('query').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+async function doSearch() {
+  const query = document.getElementById('query').value.trim();
+  if (!query) return;
+
+  const stores = getActiveStores();
+  if (!stores.length) { alert('Vyberte alespoň jeden obchod.'); return; }
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  const area = document.getElementById('resultsArea');
+  area.innerHTML = `<div class="loading"><div class="spinner"></div><br><span style="font-size:0.83rem">Prohledávám letáky a weby…</span></div>`;
+
+  const storeList = stores.join(', ');
+  const prompt = `Jsi asistent na porovnávání cen v českých supermarketech.
+
+Produkt: "${query}"
+Obchody v Jihlavě: ${storeList}
+
+1. Zjisti aktuální ceny a slevy tohoto produktu. Zvlášť vyznač, kde je produkt pod obvyklou cenou.
+2. Seřaď obchody od nejlevnějšího.
+3. Zvýrazni nejlepší nabídku a doporuč kde nakoupit.
+4. Uveď kde ověřit ceny online (letaky.cz, kupi.cz).
+Odpovídej česky, přehledně.`;
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || 'API chyba');
+
+    const fullText = (data.content || []).map(b => b.type === 'text' ? b.text : '').filter(Boolean).join('\n');
+    const inList = watchlist.find(i => i.name.toLowerCase() === query.toLowerCase());
+
+    area.innerHTML = '';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'result-header';
+    hdr.innerHTML = `
+      <h2>🔍 ${esc(query)}</h2>
+      ${!inList
+        ? `<button class="btn ghost" onclick="quickAddToList(${JSON.stringify(query)})">+ Sledovat</button>`
+        : `<span style="font-size:0.77rem;color:var(--green)">✓ Ve sledovaném</span>`}
+    `;
+    area.appendChild(hdr);
+
+    const card = document.createElement('div');
+    card.className = 'result-card highlight';
+    card.innerHTML = `<div class="card-label">Porovnání cen v Jihlavě</div><div class="card-content">${fmt(fullText)}</div>`;
+    area.appendChild(card);
+
+    const tip = document.createElement('div');
+    tip.className = 'result-card';
+    tip.innerHTML = `<div class="card-label">💡 Ověřit ceny online</div>
+      <div class="card-content"><strong>letaky.cz</strong> – letáky všech obchodů<br><strong>kupi.cz</strong> – porovnání cen<br><strong>Aplikace obchodů</strong>: Lidl Plus, Albert, Kaufland – exkluzivní slevy</div>`;
+    area.appendChild(tip);
+
+  } catch(e) {
+    area.innerHTML = `<div class="error">⚠️ ${esc(e.message)}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Hledat';
+}
+
+function quickAddToList(name) {
+  if (watchlist.find(i => i.name.toLowerCase() === name.toLowerCase())) return;
+  watchlist.push({ id: Date.now().toString(), name, hasSale: false, saleNote: '', lastCheck: null, checking: false });
+  saveWatchlist();
+  renderWatchlist();
+  // refresh button state
+  const area = document.getElementById('resultsArea');
+  const existingBtn = area.querySelector('.btn.ghost');
+  if (existingBtn) {
+    existingBtn.outerHTML = `<span style="font-size:0.77rem;color:var(--green)">✓ Ve sledovaném</span>`;
+  }
+}
+
+// ── UTILS ──
+function fmt(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^#{1,3}\s(.+)$/gm, '<strong style="color:var(--accent)">$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function chunkArray(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+// ── INIT ──
+renderWatchlist();
+
+// ── PWA SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
