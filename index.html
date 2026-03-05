@@ -239,7 +239,7 @@ function requireKey(){
   return true;
 }
 function geminiUrl(){
-  return `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${getKey()}`;
+  return `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${getKey()}`;
 }
 async function callGemini(prompt, maxTokens){
   const resp = await fetch(geminiUrl(), {
